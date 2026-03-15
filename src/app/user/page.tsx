@@ -16,6 +16,9 @@ import {
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 
+// Force dynamic rendering to avoid prerender error with useSearchParams
+export const dynamic = 'force-dynamic'
+
 function getLevelColor(level: number) {
   if (level >= 2000) return { text: 'text-cyan-400', bg: 'bg-cyan-400' }
   if (level >= 1000) return { text: 'text-purple-400', bg: 'bg-purple-400' }
@@ -280,4 +283,4 @@ export default function UserPage() {
       <UserContent />
     </Suspense>
   )
-    }
+        }
