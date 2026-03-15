@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -8,7 +8,7 @@ import { ArrowLeft, Search, X, Loader2 } from 'lucide-react'
 import { BottomNav } from '@/components/bottom-nav'
 import type { Anime } from '@/lib/types'
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') || ''
@@ -153,3 +153,28 @@ export default function SearchPage() {
     </main>
   )
 }
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/50">
+        <div className="flex items-center gap-3 h-14 px-4">
+          <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
+          <div className="flex-1 h-10 bg-muted rounded-lg animate-pulse" />
+        </div>
+      </header>
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+      <BottomNav />
+    </main>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <SearchContent />
+    </Suspense>
+  )
+              }
