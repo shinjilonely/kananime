@@ -8,6 +8,9 @@ import { ArrowLeft, Search, X, Loader2 } from 'lucide-react'
 import { BottomNav } from '@/components/bottom-nav'
 import type { Anime } from '@/lib/types'
 
+// Force dynamic rendering to avoid prerender error with useSearchParams
+export const dynamic = 'force-dynamic'
+
 function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -52,7 +55,6 @@ function SearchContent() {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center gap-3 h-14 px-4">
           <button 
@@ -177,4 +179,4 @@ export default function SearchPage() {
       <SearchContent />
     </Suspense>
   )
-          }
+        }
