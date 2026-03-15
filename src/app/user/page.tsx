@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -17,11 +17,11 @@ import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 
 function getLevelColor(level: number) {
-  if (level >= 2000) return { text: 'text-cyan-400', bg: 'bg-cyan-400', border: 'border-cyan-400/30' }
-  if (level >= 1000) return { text: 'text-purple-400', bg: 'bg-purple-400', border: 'border-purple-400/30' }
-  if (level >= 500) return { text: 'text-yellow-400', bg: 'bg-yellow-400', border: 'border-yellow-400/30' }
-  if (level >= 100) return { text: 'text-blue-400', bg: 'bg-blue-400', border: 'border-blue-400/30' }
-  return { text: 'text-gray-400', bg: 'bg-gray-400', border: 'border-gray-400/30' }
+  if (level >= 2000) return { text: 'text-cyan-400', bg: 'bg-cyan-400' }
+  if (level >= 1000) return { text: 'text-purple-400', bg: 'bg-purple-400' }
+  if (level >= 500) return { text: 'text-yellow-400', bg: 'bg-yellow-400' }
+  if (level >= 100) return { text: 'text-blue-400', bg: 'bg-blue-400' }
+  return { text: 'text-gray-400', bg: 'bg-gray-400' }
 }
 
 function getRankTitle(level: number) {
@@ -33,18 +33,10 @@ function getRankTitle(level: number) {
   return { title: 'Newbie', icon: '🌱' }
 }
 
-function formatDate(timestamp: number) {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`
-}
-
-
-
-export default function UserPage() {
+function UserContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, profile: currentUser } = useAuth()
+  const { user } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [favorites, setFavorites] = useState<FavoriteAnime[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +81,7 @@ export default function UserPage() {
 
   if (!userProfile) {
     return (
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-background pb-20">
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border/50">
           <div className="flex items-center h-14 px-4">
             <button 
@@ -285,3 +277,20 @@ export default function UserPage() {
     </main>
   )
 }
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </main>
+  )
+}
+
+export default function UserPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <UserContent />
+    </Suspense>
+  )
+    }
+  
