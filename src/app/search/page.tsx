@@ -1,8 +1,10 @@
+// Route segment config - must be at the top
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+export const revalidate = 0
+
 import { Suspense } from 'react'
 import { SearchContent, LoadingState } from './search-content'
-
-// Force dynamic rendering to avoid prerender error with useSearchParams
-export const dynamic = 'force-dynamic'
 
 export default function SearchPage() {
   return (
