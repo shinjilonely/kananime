@@ -370,5 +370,5 @@ export default function SettingsPage() {
       <BottomNav />
     </main>
   )
-                  }
-            
+                       }
+  
