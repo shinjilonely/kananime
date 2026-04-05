@@ -184,12 +184,23 @@ export const onFavoritesChange = (userId: string, callback: (favorites: Favorite
 // History functions
 export const addToHistory = async (userId: string, episode: HistoryItem) => {
   const historyRef = ref(database, `history/${userId}/${episode.episodeId}`)
+  
+  // Check if this episode was already watched to avoid duplicate EXP
+  const snapshot = await get(historyRef)
+  const isNewEpisode = !snapshot.exists()
+  
   await set(historyRef, {
     ...episode,
     watchedAt: serverTimestamp()
   })
+  
   // Update user stats
   await incrementUserStat(userId, 'watchCount')
+  
+  // Only grant EXP for new episodes (first time watching)
+  if (isNewEpisode) {
+    await incrementUserStat(userId, 'exp')
+  }
 }
 
 export const updateHistoryProgress = async (userId: string, episodeId: string, progress: number) => {
@@ -238,6 +249,79 @@ export const onHistoryChange = (userId: string, callback: (history: HistoryItem[
   })
 }
 
+// Leveling system helper functions
+export const calculateLevel = (exp: number): number => {
+  if (exp <= 0) return 0
+  // Level 1-50: 30 EXP per level (total 1500 EXP for level 50)
+  if (exp < 1500) {
+    return Math.floor(exp / 30)
+  }
+  // Level 51+: 50 EXP per level
+  // Level 50 = 1500 EXP, Level 51 = 1550 EXP, etc.
+  const expBeyond1500 = exp - 1500
+  const additionalLevels = Math.floor(expBeyond1500 / 50)
+  return 50 + additionalLevels
+}
+
+export const getExpForNextLevel = (level: number): number => {
+  if (level < 0) return 0
+  // Returns total EXP needed to reach this level
+  if (level <= 50) {
+    return level * 30
+  }
+  // Level 51+: 1500 + (level - 50) * 50
+  return 1500 + (level - 50) * 50
+}
+
+export const getExpRequiredForLevel = (level: number): number => {
+  if (level <= 0) return 0
+  // Returns total EXP required to reach this level
+  if (level <= 50) {
+    return level * 30
+  }
+  // Level 51+: 1500 + (level - 50) * 50
+  return 1500 + (level - 50) * 50
+}
+
+export const getExpProgressInCurrentLevel = (exp: number): number => {
+  const currentLevel = calculateLevel(exp)
+  const expForCurrentLevel = getExpRequiredForLevel(currentLevel)
+  return exp - expForCurrentLevel
+}
+
+export const getExpNeededForNextLevel = (exp: number): number => {
+  const currentLevel = calculateLevel(exp)
+  const expForNextLevel = getExpForNextLevel(currentLevel + 1)
+  return expForNextLevel - exp
+}
+
+// Get EXP required for the current level (30 for level 1-50, 50 for level 51+)
+export const getExpRequiredForCurrentLevel = (level: number): number => {
+  if (level <= 50) {
+    return 30
+  }
+  return 50
+}
+
+// Helper function to recalculate and update user's level based on their EXP
+export const syncUserLevel = async (userId: string): Promise<void> => {
+  const userRef = ref(database, `users/${userId}`)
+  const snapshot = await get(userRef)
+  if (snapshot.exists()) {
+    const userData = snapshot.val()
+    const currentExp = userData.exp || 0
+    const calculatedLevel = calculateLevel(currentExp)
+    
+    // Only update if level is different
+    if (userData.level !== calculatedLevel) {
+      await update(userRef, {
+        level: calculatedLevel,
+        updatedAt: serverTimestamp()
+      })
+    }
+  }
+}
+
 // User stats functions
 export const incrementUserStat = async (userId: string, stat: 'watchCount' | 'commentCount' | 'exp') => {
   const userRef = ref(database, `users/${userId}`)
@@ -249,7 +333,7 @@ export const incrementUserStat = async (userId: string, stat: 'watchCount' | 'co
     await set(userRef, {
       ...userData,
       [stat]: newValue,
-      level: stat === 'exp' ? Math.floor(newValue / 100) + 1 : userData.level || 1,
+      level: calculateLevel(newValue),
       updatedAt: serverTimestamp()
     })
   }
@@ -458,5 +542,3 @@ export interface UserProfile {
   createdAt: number
   updatedAt: number
 }
-
-
